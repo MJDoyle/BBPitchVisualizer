@@ -1,0 +1,3 @@
+fullscreen=false
+xresolution=1920
+yresolution=1080
