@@ -153,7 +153,11 @@ void Match::HandleEvents()
 			//Start a turn which can be played through
 			else if (event.key.code == sf::Keyboard::T)
 			{
-				_deploymentPhase = false;
+				if (_deploymentPhase)
+					_deploymentPhase = false;
+
+				else
+					_deploymentPhase = true;
 			}
 
 			//Quit
@@ -269,6 +273,9 @@ void Match::Draw()
 	sf::Vector2i mousePos = sf::Mouse::getPosition(*_window);
 	sf::Vector2f mouseCoords = _window->mapPixelToCoords(mousePos);
 
+	//Get the current window view
+	sf::View view = _window->getView();
+
 	///////////
 	// Clear window
 	///////////
@@ -280,6 +287,50 @@ void Match::Draw()
 	///////////
 
 	_window->draw(*_pitchSprite);
+
+	///////////
+	// Draw grid notation
+	///////////
+
+	//Numbers
+	for (int i = 1; i != 27; i++)
+	{
+		//Numbers
+		sf::Text numText;
+		numText.setFont(*_font);
+		numText.setCharacterSize(16);
+		numText.setFillColor(sf::Color::Black);
+		numText.setPosition(750, 875 - i * TILE_SIZE);
+
+		if (view.getRotation() == 270)
+			numText.setRotation(270);
+
+		numText.setString(std::to_string(i));
+		numText.setOrigin(numText.getLocalBounds().width / 2, numText.getLocalBounds().height / 2);
+
+		_window->draw(numText);
+	}
+
+	//Letters
+	char letters[15] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O' };
+
+	for (int i = 0; i != 15; i++)
+	{
+		//Letters
+		sf::Text letText;
+		letText.setFont(*_font);
+		letText.setCharacterSize(16);
+		letText.setFillColor(sf::Color::Black);
+		letText.setPosition(785 + i * TILE_SIZE, 875);
+
+		if (view.getRotation() == 270)
+			letText.setRotation(270);
+
+		letText.setString(letters[i]);
+		letText.setOrigin(letText.getLocalBounds().width / 2, letText.getLocalBounds().height / 2);
+
+		_window->draw(letText);
+	}
 
 	///////////
 	// Draw players
@@ -331,9 +382,6 @@ void Match::Draw()
 	///////////
 	// Draw UI
 	///////////
-
-	//Get the current window view
-	sf::View view = _window->getView();
 
 	//Reset the window view
 	_window->setView(_window->getDefaultView());
