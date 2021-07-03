@@ -149,11 +149,13 @@
     <ClInclude Include="match.hpp" />
     <ClInclude Include="player.hpp" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="team.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="config.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="match.cpp" />
+    <ClCompile Include="team.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BBPitchVisualizer.rc" />

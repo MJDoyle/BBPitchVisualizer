@@ -6,6 +6,8 @@
 
 class Player;
 
+
+
 class Match
 {
 public:
@@ -36,6 +38,9 @@ private:
 	//Game window
 	std::shared_ptr<sf::RenderWindow> _window;
 
+	//Font
+	std::shared_ptr<sf::Font> _font;
+
 	//Pitch texture
 	std::shared_ptr<sf::Texture> _pitchTexture;
 
@@ -57,14 +62,23 @@ private:
 	//Load texture and set up sprites
 	void LoadTexturesAndCreateSprites();
 
+	//Load font
+	void LoadFont();
+
 
 	//COMPONENTS
+
+	//Are players being deployed
+	bool _deploymentPhase;
 
 	//Map (by tile position) of all players
 	std::map<sf::Vector2i, std::shared_ptr<Player>, Vector2iCompare> _players;
 
 	//Player currently selected by user
 	std::shared_ptr<Player> _selectedPlayer;
+
+	//Move a player in deployment phase
+	void DeployPlayer(int team, sf::Vector2i playerOldPosition, sf::Vector2i playerNewPosition);
 
 	//UTILITY
 

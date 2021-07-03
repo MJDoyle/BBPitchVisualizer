@@ -19,6 +19,8 @@
 
 extern sf::Vector2i SCREEN_SIZE;
 
+extern float SCROLL_SPEED;
+
 extern const float DT;
 
 extern const float TILE_SIZE;

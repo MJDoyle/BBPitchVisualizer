@@ -3,12 +3,15 @@
 #include "player.hpp"
 
 //Constructor
-Match::Match(std::shared_ptr<sf::RenderWindow> window) : _zoom(2), _zoomSpeed(0), _dragging(false), _dragStart(0, 0)
+Match::Match(std::shared_ptr<sf::RenderWindow> window) : _zoom(2), _zoomSpeed(0), _dragging(false), _dragStart(0, 0), _deploymentPhase(true)
 {
 	_window = window;
 
 	//Load textures and set up sprites
 	LoadTexturesAndCreateSprites();
+
+	//Load font 
+	LoadFont();
 
 	//Add the starting players
 	AddDefaultStartingPlayers();
@@ -53,7 +56,11 @@ void Match::HandleEvents()
 		sf::View view = _window->getView();
 
 		//Move the view towards the drag start (as the mouse moves right, the view moves left)
-		view.move(sf::Vector2f(_dragStart - mousePos));
+		sf::Vector2f delta = sf::Vector2f(_dragStart - mousePos);
+
+		//Rotate move direction according to view rotation
+		view.move(sf::Vector2f(std::cos(view.getRotation() * std::_Pi / float(180)) * delta.x - std::sin(view.getRotation() * std::_Pi / float(180)) * delta.y, 
+			std::sin(view.getRotation() * std::_Pi / float(180)) * delta.x + std::cos(view.getRotation() * std::_Pi / float(180)) * delta.y));
 
 		//Reset the drag start position for the next loop
 		_dragStart = mousePos;
@@ -69,28 +76,28 @@ void Match::HandleEvents()
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 	{
 		sf::View view = _window->getView();
-		view.move(sf::Vector2f(0, -10));
+		view.move(SCROLL_SPEED * sf::Vector2f(std::sin(view.getRotation() * std::_Pi / float(180)), -std::cos(view.getRotation() * std::_Pi / float(180))));
 		_window->setView(view);
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 	{
 		sf::View view = _window->getView();
-		view.move(sf::Vector2f(0, 10));
+		view.move(SCROLL_SPEED * sf::Vector2f(-std::sin(view.getRotation() * std::_Pi / float(180)), std::cos(view.getRotation() * std::_Pi / float(180))));
 		_window->setView(view);
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 	{
 		sf::View view = _window->getView();
-		view.move(sf::Vector2f(-10, 0));
+		view.move(SCROLL_SPEED * sf::Vector2f(-std::cos(view.getRotation() * std::_Pi / float(180)), -std::sin(view.getRotation() * std::_Pi / float(180))));
 		_window->setView(view);
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 	{
 		sf::View view = _window->getView();
-		view.move(sf::Vector2f(10, 0));
+		view.move(SCROLL_SPEED * sf::Vector2f(std::cos(view.getRotation() * std::_Pi / float(180)), std::sin(view.getRotation() * std::_Pi / float(180))));
 		_window->setView(view);
 	}
 
@@ -118,6 +125,37 @@ void Match::HandleEvents()
 				_window->setView(view);
 			}
 
+			///////////
+			// Rotate camera
+			///////////
+			else if (event.key.code == sf::Keyboard::R)
+			{
+				//Get view
+				sf::View view = _window->getView();
+
+				std::cout << "ROTATION: " << view.getRotation() << std::endl;
+
+				//Rotate view left or right
+				if (view.getRotation() == 0)
+				{
+					view.rotate(-90);
+				}
+
+				else if (view.getRotation() == 270)
+				{
+					view.rotate(90);
+				}
+
+				//Set rotated view
+				_window->setView(view);
+			}
+
+			//Start a turn which can be played through
+			else if (event.key.code == sf::Keyboard::T)
+			{
+				_deploymentPhase = false;
+			}
+
 			//Quit
 			else if (event.key.code == sf::Keyboard::Escape)
 				_window->close();
@@ -126,22 +164,9 @@ void Match::HandleEvents()
 		else if (event.type == sf::Event::MouseButtonPressed)
 		{
 			///////////
-			// Select player
-			///////////
-			if (event.mouseButton.button == sf::Mouse::Left)
-			{
-				//Check if there is a player in that tileposition
-				if (_players.count(TilePositionFromScreenPosition(mouseCoords)))
-				{
-					//Select it if so
-					_selectedPlayer = _players[TilePositionFromScreenPosition(mouseCoords)];
-				}
-			}
-
-			///////////
 			// Start camera dragging on middle or right mouse
 			///////////
-			else if (event.mouseButton.button == sf::Mouse::Middle || event.mouseButton.button == sf::Mouse::Right)
+			if (event.mouseButton.button == sf::Mouse::Middle)
 			{
 				_dragging = true;
 				_dragStart = mousePos;
@@ -154,12 +179,21 @@ void Match::HandleEvents()
 		else if (event.type == sf::Event::MouseButtonReleased)
 		{
 			///////////
-			// Release selected player
+			// Left click
 			///////////
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-				//If htere is a selected player
-				if (_selectedPlayer != nullptr)
+				//Select player in that position if there is one
+
+				//Check if there is a player in that tileposition
+				if (_players.count(TilePositionFromScreenPosition(mouseCoords)))
+				{
+					//Select it if so
+					_selectedPlayer = _players[TilePositionFromScreenPosition(mouseCoords)];
+				}
+
+				//if there is not, and a player is selected, move the player there (setup phase)
+				else if (_selectedPlayer != nullptr)
 				{
 					//Save the old pos in order to remove from the player map at the end
 					sf::Vector2i oldPos = _selectedPlayer->GetPosition();
@@ -167,30 +201,30 @@ void Match::HandleEvents()
 					//Get the new pos
 					sf::Vector2i newPos = TilePositionFromScreenPosition(mouseCoords);
 
-					//If there isn't another pawn in the ew pos
-					if (!_players.count(newPos))
-					{
-						//Set the newpos elemt of the map to point at the pawn from the old pos
-						_players[newPos] = _players[oldPos];
+					//Move the player if it's deployment phase
+					if (_deploymentPhase)
+						DeployPlayer(0, oldPos, newPos);
+				}
+			}
 
-						//Set the new pos of that pawn
-						_players[newPos]->SetPosition(newPos);
-
-						//Remove the oldpos element
-						_players.erase(oldPos);
-					}
-
+			///////////
+			// Right click
+			///////////
+			if (event.mouseButton.button == sf::Mouse::Right)
+			{
+				//If thtere is a selected player, deselct it
+				if (_selectedPlayer != nullptr)
+				{
 					_selectedPlayer.reset();
 				}
 			}
 
 
 
-
 			///////////
 			// Stop camera dragging
 			///////////
-			else if (event.mouseButton.button == sf::Mouse::Middle || event.mouseButton.button == sf::Mouse::Right)
+			else if (event.mouseButton.button == sf::Mouse::Middle)
 				_dragging = false;
 		}
 
@@ -206,6 +240,23 @@ void Match::HandleEvents()
 				_zoomSpeed = -0.1;
 		}
 	}
+}
+
+//Move a player in deployment phase
+void Match::DeployPlayer(int team, sf::Vector2i playerOldPosition, sf::Vector2i playerNewPosition)
+{
+	//Check that the correct team is active
+
+	//Check that there are at most 11 players on the pitch
+
+	//Set the newpos elemt of the map to point at the pawn from the old pos
+	_players[playerNewPosition] = _players[playerOldPosition];
+
+	//Set the new pos of that pawn
+	_players[playerNewPosition]->SetPosition(playerNewPosition);
+
+	//Remove the oldpos element
+	_players.erase(playerOldPosition);
 }
 
 //Draw the current state
@@ -234,9 +285,21 @@ void Match::Draw()
 	// Draw players
 	///////////
 
+	//Draw selected player square
+	if (_selectedPlayer != nullptr)
+	{
+		//Create highlight rectangle
+		sf::RectangleShape rect;
+		rect.setSize(sf::Vector2f(TILE_SIZE, TILE_SIZE));
+		rect.setOrigin(TILE_SIZE / 2, TILE_SIZE / 2);
+		rect.setFillColor(sf::Color(0, 200, 0, 150));
+		rect.setPosition(ScreenPositionFromTilePosition(_selectedPlayer->GetPosition()));
+
+		_window->draw(rect);
+	}
+
 	for (auto player = _players.begin(); player != _players.end(); player++)
 	{
-
 		//Each player is just a circle, red or blue
 		sf::CircleShape circle;
 		circle.setRadius(10);
@@ -249,30 +312,50 @@ void Match::Draw()
 		else if (player->second->GetTeam() == TEAM_TWO)
 			circle.setFillColor(sf::Color(220, 0, 0, 150));
 
-		//Non-selected players are drawn at their position
-		if (player->second != _selectedPlayer)
-		{
-			circle.setPosition(ScreenPositionFromTilePosition(player->first));
-		}
-
-		//Selected players are drawn at the tile position of the mouse cursor, and given a green highliting rectangle
-		else
-		{
-			//Create highlight rectangle
-			sf::RectangleShape rect;
-			rect.setSize(sf::Vector2f(TILE_SIZE, TILE_SIZE));
-			rect.setOrigin(TILE_SIZE / 2, TILE_SIZE / 2);
-			rect.setFillColor(sf::Color(0, 200, 0, 150));
-			rect.setPosition(ScreenPositionFromTilePosition(TilePositionFromScreenPosition(mouseCoords)));
-
-			_window->draw(rect);
-
-			//Set hte position to be the tile corresponding to the mouse cursor
-			circle.setPosition(ScreenPositionFromTilePosition(TilePositionFromScreenPosition(mouseCoords)));
-		}
+		circle.setPosition(ScreenPositionFromTilePosition(player->first));
 
 		_window->draw(circle);
 	}
+
+	//Draw highlight circle for selected player
+	if (_selectedPlayer != nullptr)
+	{
+		sf::CircleShape circle;
+		circle.setRadius(10);
+		circle.setOrigin(10, 10);
+		circle.setFillColor(sf::Color(255, 255, 255, 50));
+		circle.setPosition(ScreenPositionFromTilePosition(TilePositionFromScreenPosition(mouseCoords)));
+		_window->draw(circle);
+	}
+
+	///////////
+	// Draw UI
+	///////////
+
+	//Get the current window view
+	sf::View view = _window->getView();
+
+	//Reset the window view
+	_window->setView(_window->getDefaultView());
+
+	//Draw the UI elements
+	sf::Text turnState;
+	turnState.setFont(*_font);
+	turnState.setCharacterSize(16);
+	turnState.setPosition(50, 50);
+	turnState.setFillColor(sf::Color::Black);
+
+	if (_deploymentPhase)
+		turnState.setString("Your deployment");
+
+	else
+		turnState.setString("Your turn");
+
+	_window->draw(turnState);
+
+
+	//Return the view to it's previous
+	_window->setView(view);
 
 	_window->display();
 }
@@ -375,4 +458,12 @@ void Match::LoadTexturesAndCreateSprites()
 	_pitchSprite->setTextureRect(sf::IntRect(0, 0, 800, 1080));
 	_pitchSprite->setOrigin(400, 540);
 	_pitchSprite->setPosition(SCREEN_SIZE.x / 2, SCREEN_SIZE.y / 2);
+}
+
+//Load font
+void Match::LoadFont()
+{
+	_font = std::shared_ptr<sf::Font>(new sf::Font());
+
+	_font->loadFromFile("arial.ttf");
 }

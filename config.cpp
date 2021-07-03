@@ -2,6 +2,8 @@
 
 sf::Vector2i SCREEN_SIZE = sf::Vector2i(1920, 1080);
 
+float SCROLL_SPEED = 10;
+
 const float DT = 10;
 
 const float TILE_SIZE = 25;
