@@ -77,6 +77,9 @@ private:
 	//Player currently selected by user
 	std::shared_ptr<Player> _selectedPlayer;
 
+	//The last player to have started an action
+	std::shared_ptr<Player> _activePlayer;
+
 	//Move a player in deployment phase
 	void DeployPlayer(int team, sf::Vector2i playerOldPosition, sf::Vector2i playerNewPosition);
 

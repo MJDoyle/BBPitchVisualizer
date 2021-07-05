@@ -349,8 +349,31 @@ void Match::Draw()
 		_window->draw(rect);
 	}
 
+	//Draw players
 	for (auto player = _players.begin(); player != _players.end(); player++)
 	{
+		//If if turn phase, draw status rings
+		if (!_deploymentPhase)
+		{
+			sf::CircleShape ring;
+			ring.setRadius(12);
+			ring.setOrigin(12, 12);
+
+			if (player->second == _activePlayer)
+				ring.setFillColor(sf::Color::Green);
+
+			else if (player->second->GetTurnComplete())
+				ring.setFillColor(sf::Color::Red);
+
+			else
+				ring.setFillColor(sf::Color::White);
+
+			ring.setPosition(ScreenPositionFromTilePosition(player->first));
+
+			_window->draw(ring);
+
+		}
+
 		//Each player is just a circle, red or blue
 		sf::CircleShape circle;
 		circle.setRadius(10);
@@ -358,10 +381,10 @@ void Match::Draw()
 
 		//Colour depends on team
 		if (player->second->GetTeam() == TEAM_ONE)
-			circle.setFillColor(sf::Color(0, 0, 220, 150));
+			circle.setFillColor(sf::Color(173, 199, 207));
 
 		else if (player->second->GetTeam() == TEAM_TWO)
-			circle.setFillColor(sf::Color(220, 0, 0, 150));
+			circle.setFillColor(sf::Color(255, 105, 97));
 
 		circle.setPosition(ScreenPositionFromTilePosition(player->first));
 
