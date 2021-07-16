@@ -1,5 +1,8 @@
 //A simple tool for visualizing blood bowl game states
 
+//Next TODO
+//Implement MA, player movement function in match, and breadth first pathfinding. Allow none-dice roling paths to be shown to player
+
 #include "match.hpp"
 
 int main()

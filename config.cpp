@@ -10,6 +10,15 @@ const float TILE_SIZE = 25;
 
 
 
+//Pitch positions
+
+sf::IntRect SUBS_ONE = sf::IntRect(-4, 2, 2, 8);
+
+sf::IntRect SUBS_TWO = sf::IntRect(17, 16, 2, 8);
+
+sf::IntRect PITCH = sf::IntRect(0, 0, 15, 26);
+
+
 
 sf::Vector2f operator*(double scalar, sf::Vector2f vector)
 {

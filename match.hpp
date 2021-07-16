@@ -83,6 +83,13 @@ private:
 	//Move a player in deployment phase
 	void DeployPlayer(int team, sf::Vector2i playerOldPosition, sf::Vector2i playerNewPosition);
 
+	//From a given point, return a map of all possible tiles that can be reached by a player in the tile without having to roll dice (and the distance of each tile from the starting tile)
+	std::map<sf::Vector2i, int, Vector2iCompare> GetTilesAccessibleFromPos(sf::Vector2i pos, int team, int range);
+
+	//Get neighbouring tiles of a given tile
+	std::vector<sf::Vector2i> GetTileNeighbours(sf::Vector2i pos);
+
+
 	//UTILITY
 
 	//Main update tiemr

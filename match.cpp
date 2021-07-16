@@ -199,15 +199,20 @@ void Match::HandleEvents()
 				//if there is not, and a player is selected, move the player there (setup phase)
 				else if (_selectedPlayer != nullptr)
 				{
-					//Save the old pos in order to remove from the player map at the end
-					sf::Vector2i oldPos = _selectedPlayer->GetPosition();
-
 					//Get the new pos
 					sf::Vector2i newPos = TilePositionFromScreenPosition(mouseCoords);
 
-					//Move the player if it's deployment phase
-					if (_deploymentPhase)
-						DeployPlayer(0, oldPos, newPos);
+					//Check the player can be moved to target location
+					if (PITCH.contains(newPos) || SUBS_ONE.contains(newPos) || SUBS_TWO.contains(newPos))
+					{
+
+						//Save the old pos in order to remove from the player map at the end
+						sf::Vector2i oldPos = _selectedPlayer->GetPosition();
+
+						//Move the player if it's deployment phase
+						if (_deploymentPhase)
+							DeployPlayer(0, oldPos, newPos);
+					}
 				}
 			}
 
@@ -335,6 +340,24 @@ void Match::Draw()
 	///////////
 	// Draw players
 	///////////
+
+	//Draw selected player move range
+	if (_selectedPlayer != nullptr && !_deploymentPhase)
+	{
+		std::map<sf::Vector2i, int, Vector2iCompare> moveTiles = GetTilesAccessibleFromPos(_selectedPlayer->GetPosition(), _selectedPlayer->GetTeam(), _selectedPlayer->GetRemaningMa());
+
+		//Highlight each moveable tile in green
+		for (auto tile = moveTiles.begin(); tile != moveTiles.end(); tile++)
+		{
+			sf::RectangleShape rect;
+			rect.setSize(sf::Vector2f(TILE_SIZE, TILE_SIZE));
+			rect.setOrigin(TILE_SIZE / 2, TILE_SIZE / 2);
+			rect.setFillColor(sf::Color(0, 200, 0, 100));
+			rect.setPosition(ScreenPositionFromTilePosition(tile->first));
+
+			_window->draw(rect);
+		}
+	}
 
 	//Draw selected player square
 	if (_selectedPlayer != nullptr)
@@ -479,6 +502,7 @@ void Match::AddDefaultStartingPlayers()
 			_players[sf::Vector2i(i, j)] = std::shared_ptr<Player>(new Player(TEAM_ONE, sf::Vector2i(i, j)));
 		}
 	}
+
 }
 
 //Convert tile position into pixel position
@@ -510,6 +534,98 @@ sf::Vector2i Match::TilePositionFromScreenPosition(sf::Vector2f screenPosition)
 
 	return pos;
 }
+
+//From a given point, return a set of all possible tiles that can be reached by a player in the tile without having to roll dice
+std::map<sf::Vector2i, int, Vector2iCompare> Match::GetTilesAccessibleFromPos(sf::Vector2i pos, int team, int range)
+{
+	//Standard breadth-first search
+
+	std::map<sf::Vector2i, int, Vector2iCompare> openSet;
+
+	std::map<sf::Vector2i, int, Vector2iCompare> closedSet;
+
+	//Add start pos to open set
+	openSet[pos] = 0;
+
+	while (openSet.size())
+	{
+		//Get the position and distance of the last tile in the openset
+		sf::Vector2i position = std::prev(openSet.end())->first;
+
+		//The distance of the tile from the starting tile
+		int distance = std::prev(openSet.end())->second;
+
+		//If the tile is within range, get the neighbours
+		if (distance < range)
+		{
+			//Get the neighbours of this tile
+			std::vector<sf::Vector2i> neighbours = GetTileNeighbours(position);
+
+			//Iterate through neighbours and check if they are already in a set
+			for (auto neighbour = neighbours.begin(); neighbour != neighbours.end(); neighbour++)
+			{
+				//If the neighbour is already in the closed set, with a shorter or the same distance, move on to the next one
+				if (!closedSet.count(*neighbour) || closedSet[*neighbour] > distance + 1)
+				{
+					//If the neighbour isn't in the open set, add it
+					if (!openSet.count(*neighbour))
+					{
+						openSet[*neighbour] = distance + 1;
+					}
+
+					//If the neighbour is already in the open set, but with a larger distance, replace it
+					else if (openSet[*neighbour] > distance + 1)
+					{
+						openSet[*neighbour] = distance + 1;
+					}
+				}
+			}
+		}
+
+		//Check if the tile is either not in the closed, or in with a large distance. If so, add it/replace it
+
+		if (!closedSet.count(position) || closedSet[position] > distance + 1)
+		{
+			closedSet[position] = distance;
+		}
+
+		//Remove the tile from the open set
+		openSet.erase(position);
+	}
+
+	return closedSet;
+}
+
+//Get neighbouring tiles of a given tile
+std::vector<sf::Vector2i> Match::GetTileNeighbours(sf::Vector2i pos)
+{
+	std::vector<sf::Vector2i> neighbours;
+
+	//Look at all the tiles in a 3x3 square centered on pos. Neglect pos, and all other tiles that are off the pitch
+	for (int i = pos.x - 1; i <= pos.x + 1; i++)
+	{
+		for (int j = pos.y - 1; j <= pos.y + 1; j++)
+		{
+			if (sf::Vector2i(i, j) != pos && PITCH.contains(sf::Vector2i(i, j)))
+				neighbours.push_back(sf::Vector2i(i, j));
+		}
+	}
+
+	return neighbours;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //Load textures and create sprites

@@ -27,6 +27,15 @@ extern const float TILE_SIZE;
 
 const enum TEAMS {TEAM_ONE, TEAM_TWO, NUM_TEAMS};
 
+//Pitch positions
+
+extern sf::IntRect SUBS_ONE;
+
+extern sf::IntRect SUBS_TWO;
+
+extern sf::IntRect PITCH;
+
+
 
 //Some overlads for vector operations
 
