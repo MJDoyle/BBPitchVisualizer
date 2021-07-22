@@ -341,6 +341,24 @@ void Match::Draw()
 	// Draw players
 	///////////
 
+	//Draw tacklezones of player on the opposite team to the selected player
+	if (_selectedPlayer != nullptr && !_deploymentPhase)
+	{
+		for (auto player = _players.begin(); player != _players.end(); player++)
+		{
+			if (player->second->GetTeam() != _selectedPlayer->GetTeam())
+			{
+				sf::RectangleShape rect;
+				rect.setSize(sf::Vector2f(3 * TILE_SIZE, 3 * TILE_SIZE));
+				rect.setOrigin(1.5 * TILE_SIZE, 1.5 * TILE_SIZE);
+				rect.setFillColor(sf::Color(200, 0, 0, 50));
+				rect.setPosition(ScreenPositionFromTilePosition(player->first));
+
+				_window->draw(rect);
+			}
+		}
+	}
+
 	//Draw selected player move range
 	if (_selectedPlayer != nullptr && !_deploymentPhase)
 	{
@@ -352,7 +370,7 @@ void Match::Draw()
 			sf::RectangleShape rect;
 			rect.setSize(sf::Vector2f(TILE_SIZE, TILE_SIZE));
 			rect.setOrigin(TILE_SIZE / 2, TILE_SIZE / 2);
-			rect.setFillColor(sf::Color(0, 200, 0, 100));
+			rect.setFillColor(sf::Color(0, 200, 0, 50));
 			rect.setPosition(ScreenPositionFromTilePosition(tile->first));
 
 			_window->draw(rect);
@@ -617,20 +635,6 @@ std::vector<sf::Vector2i> Match::GetTileAccessibleNeighbours(sf::Vector2i pos)
 
 	return neighbours;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //Load textures and create sprites
 void Match::LoadTexturesAndCreateSprites()
