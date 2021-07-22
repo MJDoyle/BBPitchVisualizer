@@ -559,7 +559,7 @@ std::map<sf::Vector2i, int, Vector2iCompare> Match::GetTilesAccessibleFromPos(sf
 		if (distance < range)
 		{
 			//Get the neighbours of this tile
-			std::vector<sf::Vector2i> neighbours = GetTileNeighbours(position);
+			std::vector<sf::Vector2i> neighbours = GetTileAccessibleNeighbours(position);
 
 			//Iterate through neighbours and check if they are already in a set
 			for (auto neighbour = neighbours.begin(); neighbour != neighbours.end(); neighbour++)
@@ -597,7 +597,7 @@ std::map<sf::Vector2i, int, Vector2iCompare> Match::GetTilesAccessibleFromPos(sf
 }
 
 //Get neighbouring tiles of a given tile
-std::vector<sf::Vector2i> Match::GetTileNeighbours(sf::Vector2i pos)
+std::vector<sf::Vector2i> Match::GetTileAccessibleNeighbours(sf::Vector2i pos)
 {
 	std::vector<sf::Vector2i> neighbours;
 
@@ -607,7 +607,11 @@ std::vector<sf::Vector2i> Match::GetTileNeighbours(sf::Vector2i pos)
 		for (int j = pos.y - 1; j <= pos.y + 1; j++)
 		{
 			if (sf::Vector2i(i, j) != pos && PITCH.contains(sf::Vector2i(i, j)))
-				neighbours.push_back(sf::Vector2i(i, j));
+			{
+				//Neglect tiles that are filled by a player
+				if(!_players.count(sf::Vector2i(i, j)))
+					neighbours.push_back(sf::Vector2i(i, j));
+			}
 		}
 	}
 

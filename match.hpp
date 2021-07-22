@@ -87,7 +87,7 @@ private:
 	std::map<sf::Vector2i, int, Vector2iCompare> GetTilesAccessibleFromPos(sf::Vector2i pos, int team, int range);
 
 	//Get neighbouring tiles of a given tile
-	std::vector<sf::Vector2i> GetTileNeighbours(sf::Vector2i pos);
+	std::vector<sf::Vector2i> GetTileAccessibleNeighbours(sf::Vector2i pos);
 
 
 	//UTILITY
